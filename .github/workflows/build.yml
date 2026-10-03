@@ -1,0 +1,39 @@
+name: Build TapBox IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project TapBox.xcodeproj \
+            -scheme TapBox \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/TapBox.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Create IPA
+        run: |
+          mkdir -p build/Payload
+          cp -R build/TapBox.xcarchive/Products/Applications/TapBox.app build/Payload/
+          cd build
+          zip -r TapBox-unsigned.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: TapBox-IPA
+          path: build/TapBox-unsigned.ipa
